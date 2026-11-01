@@ -1,0 +1,229 @@
+"use strict";
+let state, draft, tab = 'overview', dirty = false, searching = '', searchCategory = '', searchRoom = '', entityLimit = 50;
+const root = document.getElementById('app');
+let uiLanguage = localStorage.getItem('athenaLanguage') || (navigator.language.startsWith('de') ? 'de' : 'en');
+let catalogs = { de: {}, en: {} };
+function t(key) { return catalogs[uiLanguage]?.[key] || key; }
+function localizeDom() {
+    document.documentElement.lang = uiLanguage;
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    let node;
+    while ((node = walker.nextNode())) {
+        const raw = node.textContent || '', key = raw.trim();
+        if (!(node.parentElement?.closest('[data-no-translate]')) && key && catalogs[uiLanguage]?.[key])
+            node.textContent = raw.replace(key, t(key));
+    }
+    root.querySelectorAll('[placeholder]').forEach(el => { el.placeholder = t(el.placeholder); });
+}
+const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const icons = { overview: '<path d="m3 10 9-7 9 7v10H3z"/><path d="M9 20v-7h6v7"/>', appearance: '<circle cx="12" cy="12" r="9"/><circle cx="8" cy="9" r="1"/><circle cx="14" cy="7" r="1"/><circle cx="17" cy="12" r="1"/><path d="M12 21v-5H8"/>', devices: '<rect x="3" y="3" width="6" height="6" rx="1"/><rect x="15" y="3" width="6" height="6" rx="1"/><rect x="3" y="15" width="6" height="6" rx="1"/><rect x="15" y="15" width="6" height="6" rx="1"/>', voice: '<rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v4"/>', camera: '<rect x="2" y="5" width="14" height="14" rx="2"/><path d="m16 10 6-4v12l-6-4"/>', system: '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/>' };
+const icon = (name) => `<svg viewBox="0 0 24 24" aria-hidden="true">${icons[name] || icons.system}</svg>`;
+async function api(path, body) {
+    const response = await fetch('/api/' + path, { method: body === undefined ? 'GET' : 'POST', headers: body === undefined ? {} : { 'Content-Type': 'application/json', 'X-Athena-Request': '1' }, body: body === undefined ? undefined : JSON.stringify(body), credentials: 'same-origin' });
+    const value = await response.json();
+    if (!response.ok) {
+        if (response.status === 401 && path !== 'login')
+            login();
+        throw new Error(value.error || 'Anfrage fehlgeschlagen');
+    }
+    return value;
+}
+let toastTimer;
+function toast(text) { text = t(text); const el = document.getElementById('toast'); el.textContent = text; el.style.display = 'block'; clearTimeout(toastTimer); toastTimer = window.setTimeout(() => el.style.display = 'none', 4500); }
+function login() {
+    root.innerHTML = `<form class="panel login" id="login"><div class="brand">Athena</div><h2>Dein Display. Deine Einstellungen.</h2><p>Öffne am Gerät die Athena-Einstellungen und gib den dort angezeigten vierstelligen Code ein. Der Code wird nur einmal benötigt.</p><label class="field"><span>4-stelliger Kopplungscode</span><input name="key" type="text" inputmode="numeric" pattern="[0-9]{4}" autocomplete="one-time-code" required minlength="4" maxlength="4" autofocus></label><button class="primary">Verbinden</button><div class="error" id="error" role="alert"></div></form>`;
+    localizeDom();
+    document.getElementById('login').addEventListener('submit', async (e) => { e.preventDefault(); const key = root.querySelector('[name=key]').value; try {
+        await api('login', { key });
+        await load();
+    }
+    catch (error) {
+        document.getElementById('error').textContent = t(error.message);
+    } });
+}
+async function load() { state = await api('state'); draft = JSON.parse(JSON.stringify(state.config)); dirty = false; render(); }
+function field(label, key, value, type = 'text', placeholder = '') { return `<label class="field"><span>${label}</span><input data-field="${key}" type="${type}" value="${escapeHtml(value)}" placeholder="${escapeHtml(placeholder)}" ${type === 'password' ? 'autocomplete="new-password"' : key === 'nightLux' ? 'step="0.1" min="0.1" max="1000"' : ''}></label>`; }
+function select(label, key, options, value) { return `<label class="field"><span>${label}</span><select data-field="${key}">${options.map(([id, name]) => `<option value="${escapeHtml(id)}" ${id === value ? 'selected' : ''}>${escapeHtml(name)}</option>`).join('')}</select></label>`; }
+function toggle(label, key, value) { return `<label class="toggle"><span>${label}</span><input type="checkbox" data-field="${key}" ${value ? 'checked' : ''}></label>`; }
+function buttons() { return `<div class="actions"><button class="primary" id="save">Speichern</button><button class="secondary" id="discard">Änderungen verwerfen</button><span class="muted" id="dirty">${dirty ? 'Ungespeicherte Änderungen' : ''}</span></div>`; }
+const homeCategories = { light: ['lighting', 'Beleuchtung', 0], climate: ['heating', 'Heizung', 1], cover: ['shading', 'Beschattung', 2], switch: ['switches', 'Schalter', 3], input_boolean: ['switches', 'Schalter', 3], lock: ['access', 'Zugang', 4], media_player: ['media', 'Medien', 5], scene: ['scenes', 'Szenen', 6], sensor: ['sensors', 'Sensoren', 7], binary_sensor: ['sensors', 'Sensoren', 7] };
+function preview() {
+    const allowed = state.entities.filter(e => draft.domains.includes(e.entity_id.split('.')[0]) && (!draft.areas.length || draft.areas.includes(e.area)));
+    const favorites = draft.favorites.length ? draft.favorites.map(id => allowed.find(e => e.entity_id === id)).filter((e) => Boolean(e)) : allowed.slice(0, 6);
+    const mode = draft.homeGrouping || 'none', useAreas = mode === 'area' || mode === 'area_category', useCategories = mode === 'category' || mode === 'area_category';
+    const groups = new Map();
+    for (const e of favorites) {
+        const category = homeCategories[e.entity_id.split('.')[0]] || ['other', 'Weitere Geräte', 8];
+        const area = state.areas[e.area] ? e.area : '';
+        const key = (useAreas ? 'area:' + area : '') + (useCategories ? '/category:' + category[0] : '');
+        const title = [...(useAreas ? [state.areas[area] || t('Ohne Raum')] : []), ...(useCategories ? [t(category[1])] : [])].join(' · ');
+        if (!groups.has(key))
+            groups.set(key, { title, area, order: useCategories ? category[2] : 0, entities: [] });
+        groups.get(key).entities.push(e);
+    }
+    const ordered = [...groups.values()].sort((a, b) => useAreas ? (Number(!a.area) - Number(!b.area) || (state.areas[a.area] || '').localeCompare(state.areas[b.area] || '', 'de') || a.order - b.order) : a.order - b.order);
+    let remaining = 4;
+    const cards = ordered.map(group => { const entries = group.entities.slice(0, remaining); remaining -= entries.length; if (!entries.length)
+        return ''; return (mode !== 'none' ? `<div class="pgroup">${escapeHtml(group.title)}</div>` : '') + entries.map(e => `<div class="pcard"><strong>${escapeHtml(e.name)}</strong><span>${escapeHtml(e.state)}</span></div>`).join(''); }).join('');
+    return `<div class="preview"><div class="pbrand">Athena <small> · ${escapeHtml(draft.name)}</small></div><div class="clock">${new Date().toLocaleTimeString(uiLanguage === 'de' ? 'de-DE' : 'en-GB', { hour: '2-digit', minute: '2-digit' })}</div><small>${new Date().toLocaleDateString(uiLanguage === 'de' ? 'de-DE' : 'en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}</small><div class="grid">${cards || '<div class="pcard"><strong>Deine Favoriten</strong><span>Geräte auswählen</span></div>'}</div><div class="pnav"><span>Zuhause</span><span>Geräte</span><span>Kameras</span></div></div>`;
+}
+function entityOptions(domains) { return [['', 'Keine Auswahl'], ...state.entities.filter(e => domains.includes(e.entity_id.split('.')[0])).map(e => [e.entity_id, e.name + ' · ' + e.entity_id])]; }
+function render() {
+    uiLanguage = draft.language || 'de';
+    localStorage.setItem('athenaLanguage', uiLanguage);
+    document.documentElement.dataset.theme = draft.theme;
+    const pages = [['overview', 'Übersicht'], ['appearance', 'Darstellung'], ['devices', 'Geräte & Filter'], ['voice', 'Sprache'], ['camera', 'Kameras & Klingel'], ['system', 'System']];
+    let html = '';
+    if (tab === 'overview')
+        html = `<h1>Willkommen bei Athena</h1><p class="subtitle">Alles für dein Display, bequem im Browser.</p><div class="tiles"><div class="tile">Home Assistant<strong>${state.status.connected ? 'Verbunden' : 'Nicht verbunden'}</strong><small>${escapeHtml(state.status.haStatus)}</small></div><div class="tile">Sprachstatus<strong>${escapeHtml(voiceLabel(state.status.voice))}</strong><small>Lokale Verbindung zum Audiodienst</small></div><div class="tile">Geräteanzeige<strong>${draft.favorites.length} Favoriten</strong><small>${state.entities.length} HA-Entitäten verfügbar</small></div></div><div class="columns actions"><section class="panel"><h2>Home Assistant</h2>${field('Adresse', 'haUrl', draft.haUrl, 'url', 'http://192.168.1.5:8123')}${field(draft.hasToken ? 'Neuer Zugriffstoken · leer lassen zum Beibehalten' : 'Zugriffstoken', 'haToken', draft.haToken || '', 'password')}${field('Gerätename', 'name', draft.name)}<small>Der Token wird verschlüsselt auf dem Gerät gespeichert und nicht exportiert. Verwende diese lokale HTTP-WebUI in deinem vertrauenswürdigen LAN.</small>${buttons()}</section><section class="panel"><h2>Deine Startansicht</h2><div id="preview">${preview()}</div><p class="preview-note">Die Vorschau zeigt die Anordnung vereinfacht.</p></section></div>`;
+    if (tab === 'appearance')
+        html = `<h1>Darstellung</h1><p class="subtitle">Passe die Anzeige auf deinem Gerät an.</p><div class="columns"><section class="panel">${select('Anzeigesprache', 'language', [['de', 'Deutsch'], ['en', 'English']], draft.language || 'de')}${select('Design', 'theme', [['light', 'Athena Light'], ['dark', 'Athena Dark']], draft.theme)}${select('Startseite gruppieren', 'homeGrouping', [['none', 'Ohne Gruppierung'], ['area', 'Räume'], ['category', 'Kategorien'], ['area_category', 'Räume & Kategorien']], draft.homeGrouping || 'none')}<p class="preview-note">Gruppiert deine Startseiten-Favoriten. Die Raumzuordnung wird aus Home Assistant übernommen. Auf der Startseite kannst du zwischen Alle und einzelnen Gruppen wechseln.</p>${entityPicker('Wetter auf der Startseite', 'weather', ['weather'])}${toggle('Bewegung reduzieren', 'reducedMotion', draft.reducedMotion)}<h2>${t('Nachtansicht')}</h2>${select('Nachtmodus', 'nightMode', [['off', 'Aus'], ['auto', 'Lichtsensor'], ['always', 'Immer']], draft.nightMode || 'off')}<p class="preview-note" id="night-sensor">${t(state.status.lightSensorAvailable ? 'Lichtsensor verfügbar' : 'Kein Lichtsensor verfügbar')} · ${state.status.lux == null ? '–' : state.status.lux.toFixed(1)} lx</p>${field('Lichtschwelle · Lux', 'nightLux', String(draft.nightLux ?? 5), 'number')}${field('Verzögerung · Sekunden', 'nightDelay', String(draft.nightDelay ?? 30), 'number')}${field('Nachthelligkeit · 1 bis 20 %', 'nightBrightness', String(draft.nightBrightness ?? 2), 'number')}${toggle('Datum nachts anzeigen', 'nightShowDate', draft.nightShowDate ?? false)}${toggle('Statussymbole nachts anzeigen', 'nightShowStatus', draft.nightShowStatus ?? true)}<p class="preview-note">${t('Tippen zeigt die normale Ansicht für 30 Sekunden. Sprache und Klingeln bleiben aktiv.')}</p><div class="note">Themes, Layouts und Animationen haben getrennte Schnittstellen. Weitere Pakete können später ergänzt werden; Paketinstallation ist in 0.1 noch nicht enthalten.</div>${buttons()}</section><section class="panel"><h2>Vorschau</h2><div id="preview">${preview()}</div><p class="preview-note">Speichern übernimmt die Änderungen auf dem Gerät.</p></section></div>`;
+    if (tab === 'devices')
+        html = `<h1>Geräte & Filter</h1><p class="subtitle">Wähle aus, was Athena zeigt. Die Filter verändern keine HA-Berechtigungen.</p><div class="columns"><section class="panel"><h2>Gerätetypen</h2><div class="chips">${['light', 'switch', 'climate', 'cover', 'lock', 'sensor', 'binary_sensor', 'scene', 'input_boolean', 'media_player'].map(d => `<label class="checkchip"><input type="checkbox" data-domain="${d}" ${draft.domains.includes(d) ? 'checked' : ''}>${escapeHtml(d)}</label>`).join('')}</div><h2 class="actions">Räume</h2><small>Ohne Auswahl werden alle Räume angezeigt. Raumdaten benötigen passende HA-Berechtigungen.</small><div class="chips actions">${Object.entries(state.areas).map(([id, name]) => `<label class="checkchip"><input type="checkbox" data-area="${escapeHtml(id)}" ${draft.areas.includes(id) ? 'checked' : ''}>${escapeHtml(name)}</label>`).join('') || '<span class="muted">Keine Raumdaten verfügbar</span>'}</div>${buttons()}</section><section class="panel"><h2>Favoriten</h2><input id="search" placeholder="Entitäten suchen …" value="${escapeHtml(searching)}"><div class="search-filters"><label>${t("Kategorie")}<select id="search-category"><option value="">${t("Alle Kategorien")}</option>${categoryOptions()}</select></label><label>${t("Raum")}<select id="search-room">${roomOptions(searchRoom)}</select></label></div><small id="entity-count" aria-live="polite"></small><div class="filterlist" id="entities"></div><button class="secondary" id="more-entities" type="button">${t("Mehr anzeigen")}</button><small>Die Reihenfolge entspricht der Auswahl. Ohne Favoriten zeigt Athena die ersten sechs passenden Geräte.</small></section></div>`;
+    if (tab === 'voice')
+        html = `<h1>Sprache</h1><p class="subtitle">Die bestehende HA-Sprachpipeline bleibt für Aufnahme und Antworten zuständig.</p><div class="columns"><section class="panel">${select('Visualisierung', 'animation', [['wave', 'Wellenform'], ['pulse', 'Sanfter Kreis']], draft.animation)}${toggle('Bewegung reduzieren', 'reducedMotion', draft.reducedMotion)}<p>Status: <strong id="voice-status">${escapeHtml(voiceLabel(state.status.voice))}</strong></p><div class="note">Die Visualisierung folgt dem lokalen Sprachzustand. Version 0.1 überträgt noch keinen Mikrofonpegel oder Antworttext.</div>${buttons()}</section><section class="panel"><h2>Animationsvorschau</h2><div id="animation-preview" class="wave ${draft.animation === 'pulse' ? 'pulse' : ''} ${draft.reducedMotion ? 'reduced' : ''}"><i></i><i></i><i></i><i></i><i></i></div><small>Darstellungsvorschau, keine laufende Sprachaufnahme.</small></section></div>`;
+    if (tab === 'camera')
+        html = `<h1>Kameras & Klingel</h1><p class="subtitle">Beim Klingeln automatisch die passende Kamera zeigen.</p><section class="panel">${entityPicker('Kamera', 'camera', ['camera'])}${entityPicker('Klingel-Auslöser', 'doorbell', ['binary_sensor', 'event', 'sensor', 'input_boolean'])}${field('Auslösender Zustand · für Event-Entitäten nicht erforderlich', 'doorbellValue', draft.doorbellValue)}${field('Anzeigedauer in Sekunden · 5 bis 300', 'cameraSeconds', String(draft.cameraSeconds), 'number')}<h2>Klingelton</h2>${select('Ton', 'ringtone', [['none', 'Aus'], ['two-note', 'Zweiklang'], ['soft', 'Sanfter Ton']], draft.ringtone || 'two-note')}${field('Klingellautstärke · 0 bis 100 %', 'ringVolume', String(draft.ringVolume ?? 65), 'number')}<button class="secondary" id="test-chime">Klingelton testen</button><p class="preview-note">Der Ton wird lokal am Echo abgespielt. Zusätzlich gilt die Medienlautstärke des Geräts.</p><div class="note">Es zählen nur neue Zustandsänderungen, keine beim Verbinden gelesenen Zustände. Danach kehrt Athena zur vorherigen Ansicht zurück. Kameras verwenden HLS, soweit HA es bereitstellt; sonst werden Einzelbilder angezeigt. Kameraton ist ausgeschaltet.</div>${buttons()}<div class="actions"><button class="secondary" id="show-camera">Kamera auf Gerät anzeigen</button><button class="secondary" id="show-home">Zur Startseite</button></div></section>`;
+    if (tab === 'system')
+        html = `<h1>System</h1><p class="subtitle">Athena ${escapeHtml(state.status.version)} · ${escapeHtml(state.status.address)}</p><section class="panel">${toggle('Athena beim Gerätestart öffnen', 'autoStart', draft.autoStart)}<p>App und WebUI verwenden dieselbe Konfiguration. Die vorhandene VACAV-Installation bleibt installiert.</p>${buttons()}<div class="actions"><a class="secondary" href="/api/export" download>Konfiguration exportieren</a><button class="secondary" id="import">Konfiguration importieren</button><input type="file" id="file" accept="application/json,.json" hidden></div><small>Exporte enthalten keine Zugriffstokens oder Zugangscodes.</small></section>`;
+    root.innerHTML = `<header class="header"><div class="brand">Athena</div><div class="badge"><span id="connection-dot" class="dot ${state.status.connected ? 'online' : ''}"></span><span id="connection-label">${escapeHtml(draft.name)} · ${state.status.connected ? 'Verbunden' : 'Nicht verbunden'}</span></div></header><div class="shell"><aside><nav>${pages.map(([id, name]) => `<button data-tab="${id}" class="${id === tab ? 'selected' : ''}">${icon(id)}${name}</button>`).join('')}</nav><button class="secondary logout" id="logout">Abmelden</button></aside><main>${html}<footer>Athena · Einstellungen für dieses Gerät</footer></main></div>`;
+    localizeDom();
+    root.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => { tab = b.dataset.tab; render(); });
+    root.querySelectorAll('[data-field]').forEach(el => el.addEventListener('change', () => {
+        const field = el.dataset.field;
+        const value = el instanceof HTMLInputElement && el.type === 'checkbox' ? el.checked : el instanceof HTMLInputElement && el.type === 'number' ? Number(el.value) : el.value;
+        draft[field] = value;
+        markDirty();
+        if (field === 'language') {
+            render();
+            return;
+        }
+        document.documentElement.dataset.theme = draft.theme;
+        const p = document.getElementById('preview');
+        if (p)
+            p.innerHTML = preview();
+        const a = document.getElementById('animation-preview');
+        if (a)
+            a.className = 'wave ' + (draft.animation === 'pulse' ? 'pulse ' : '') + (draft.reducedMotion ? 'reduced' : '');
+    }));
+    root.querySelectorAll('[data-domain],[data-area]').forEach(el => el.onchange = () => { const key = el.dataset.domain ? 'domains' : 'areas'; const id = el.dataset.domain || el.dataset.area; draft[key] = el.checked ? [...draft[key], id] : draft[key].filter(x => x !== id); markDirty(); renderEntities(); });
+    document.getElementById('test-chime')?.addEventListener('click', () => api('ringtone/test', { ringtone: draft.ringtone, ringVolume: draft.ringVolume }).then(() => toast('Klingelton am Gerät abgespielt')).catch(e => toast(e.message)));
+    document.getElementById('show-camera')?.addEventListener('click', () => api('view', { page: 'camera' }).then(() => toast('Kamera auf dem Gerät geöffnet')).catch(e => toast(e.message)));
+    document.getElementById('show-home')?.addEventListener('click', () => api('view', { page: 'home' }).catch(e => toast(e.message)));
+    document.getElementById('save')?.addEventListener('click', async () => { const b = document.getElementById('save'); b.disabled = true; try {
+        await api('config', draft);
+        await load();
+        toast('Auf dem Gerät gespeichert');
+    }
+    catch (e) {
+        toast(e.message);
+        b.disabled = false;
+    } });
+    document.getElementById('discard')?.addEventListener('click', () => { draft = JSON.parse(JSON.stringify(state.config)); dirty = false; render(); });
+    document.getElementById('logout').onclick = async () => { await api('logout', {}); login(); };
+    bindEntityPickers();
+    document.getElementById('search-category')?.addEventListener('change', e => { searchCategory = e.target.value; entityLimit = 50; renderEntities(); });
+    document.getElementById('search-room')?.addEventListener('change', e => { searchRoom = e.target.value; entityLimit = 50; renderEntities(); });
+    document.getElementById('more-entities')?.addEventListener('click', () => { entityLimit += 50; renderEntities(); });
+    document.getElementById('search')?.addEventListener('input', e => { searching = e.target.value; entityLimit = 50; renderEntities(); });
+    renderEntities();
+    document.getElementById('import')?.addEventListener('click', () => document.getElementById('file').click());
+    document.getElementById('file')?.addEventListener('change', async (e) => { const file = e.target.files?.[0]; if (!file)
+        return; try {
+        if (file.size > 65536)
+            throw new Error('Datei ist zu groß');
+        const imported = JSON.parse(await file.text());
+        if (imported.schemaVersion !== 1)
+            throw new Error('Unbekannte Konfigurationsversion');
+        delete imported.haToken;
+        draft = { ...draft, ...imported };
+        markDirty();
+        render();
+        toast('Import geladen. Zum Übernehmen speichern.');
+    }
+    catch (error) {
+        toast(error.message);
+    } });
+}
+function markDirty() { dirty = true; const el = document.getElementById('dirty'); if (el)
+    el.textContent = t('Ungespeicherte Änderungen'); }
+function categoryOf(e) { return homeCategories[e.entity_id.split('.')[0]] || ['other', 'Weitere Geräte', 8]; }
+function matchesSearch(e, query, category, room) {
+    const words = query.trim().toLocaleLowerCase().split(/\s+/).filter(Boolean);
+    const haystack = [e.name, e.entity_id, e.deviceName || '', state.areas[e.area] || '', t(categoryOf(e)[1])].join(' ').toLocaleLowerCase();
+    return (!category || categoryOf(e)[0] === category) && (!room || (room === '__none' ? !e.area : e.area === room)) && words.every(word => haystack.includes(word));
+}
+function categoryOptions() { const unique = new Map(); state.entities.forEach(e => { const c = categoryOf(e); unique.set(c[0], c); }); return [...unique.values()].sort((a, b) => a[2] - b[2]).map(c => `<option value="${c[0]}" ${c[0] === searchCategory ? 'selected' : ''}>${escapeHtml(t(c[1]))}</option>`).join(''); }
+function roomOptions(value) { return [['', t('Alle Räume')], ...Object.entries(state.areas).sort((a, b) => a[1].localeCompare(b[1])), ['__none', t('Ohne Raum')]].map(([id, name]) => `<option data-no-translate value="${escapeHtml(id)}" ${id === value ? 'selected' : ''}>${escapeHtml(name)}</option>`).join(''); }
+function entityCaption(e) { return `<strong data-no-translate>${escapeHtml(e.name)}</strong><small data-no-translate>${escapeHtml(e.entity_id)}</small><small data-no-translate>${escapeHtml([e.deviceName, state.areas[e.area]].filter(Boolean).join(' · '))}</small>`; }
+function renderEntities() {
+    const list = document.getElementById('entities');
+    if (!list || !state)
+        return;
+    const all = state.entities.filter(e => draft.domains.includes(e.entity_id.split('.')[0]) && (!draft.areas.length || draft.areas.includes(e.area)) && matchesSearch(e, searching, searchCategory, searchRoom));
+    const entries = all.slice(0, entityLimit);
+    list.innerHTML = entries.map(e => `<label class="entity"><input type="checkbox" data-favorite="${escapeHtml(e.entity_id)}" ${draft.favorites.includes(e.entity_id) ? 'checked' : ''}><span class="info">${entityCaption(e)}</span><small>${escapeHtml(e.state)}</small></label>`).join('') || `<p>${t('Keine passenden Entitäten.')}</p>`;
+    const count = document.getElementById('entity-count');
+    if (count)
+        count.textContent = `${all.length} ${t('Treffer')} · ${entries.length} ${t('angezeigt')}`;
+    const more = document.getElementById('more-entities');
+    if (more)
+        more.hidden = entries.length >= all.length;
+    list.querySelectorAll('[data-favorite]').forEach(el => el.onchange = () => { const id = el.dataset.favorite; draft.favorites = el.checked ? [...draft.favorites, id] : draft.favorites.filter(x => x !== id); markDirty(); });
+}
+function entityPicker(label, key, domains) {
+    const selected = state.entities.find(e => e.entity_id === draft[key]);
+    return `<details class="entity-picker" data-picker="${key}" data-domains="${domains.join(',')}"><summary><span>${t(label)}</span><strong data-no-translate>${escapeHtml(selected?.name || draft[key] || t('Keine Auswahl'))}</strong><small data-no-translate>${escapeHtml(selected?.entity_id || '')}</small></summary><div class="picker-body"><input class="picker-query" placeholder="${t('Name, Gerät oder Entitäts-ID suchen …')}"><div class="search-filters"><label>${t('Kategorie')}<select class="picker-category"><option value="">${t('Alle Kategorien')}</option>${categoryOptions()}</select></label><label>${t('Raum')}<select class="picker-room">${roomOptions('')}</select></label></div><button class="secondary picker-clear" type="button">${t('Keine Auswahl')}</button><small class="picker-count" aria-live="polite"></small><div class="filterlist picker-results"></div><button class="secondary picker-more" type="button">${t('Mehr anzeigen')}</button></div></details>`;
+}
+function bindEntityPickers() {
+    root.querySelectorAll('[data-picker]').forEach(panel => {
+        const key = panel.dataset.picker, domains = panel.dataset.domains.split(',');
+        let limit = 30;
+        const query = panel.querySelector('.picker-query'), category = panel.querySelector('.picker-category'), room = panel.querySelector('.picker-room'), list = panel.querySelector('.picker-results'), more = panel.querySelector('.picker-more');
+        category.value = '';
+        const choose = (id) => { draft[key] = id; markDirty(); render(); };
+        const draw = () => {
+            const all = state.entities.filter(e => domains.includes(e.entity_id.split('.')[0]) && matchesSearch(e, query.value, category.value, room.value));
+            const entries = all.slice(0, limit);
+            list.innerHTML = entries.map(e => `<button type="button" class="entity picker-result" data-pick="${escapeHtml(e.entity_id)}"><span class="info">${entityCaption(e)}</span>${draft[key] === e.entity_id ? '✓' : ''}</button>`).join('') || `<p>${t('Keine passenden Entitäten.')}</p>`;
+            panel.querySelector('.picker-count').textContent = `${all.length} ${t('Treffer')} · ${entries.length} ${t('angezeigt')}`;
+            more.hidden = entries.length >= all.length;
+            list.querySelectorAll('[data-pick]').forEach(button => button.onclick = () => choose(button.dataset.pick));
+        };
+        query.oninput = () => { limit = 30; draw(); };
+        category.onchange = room.onchange = () => { limit = 30; draw(); };
+        more.onclick = () => { limit += 30; draw(); };
+        panel.querySelector('.picker-clear').onclick = () => choose('');
+        panel.ontoggle = () => { if (panel.open)
+            draw(); };
+    });
+}
+function voiceLabel(value) { return { IDLE: 'Bereit', LISTENING: 'Zuhören', THINKING: 'Verarbeiten', SPEAKING: 'Sprechen', MUTED: 'Stumm', OFFLINE: 'Nicht verbunden' }[value] ? t({ IDLE: 'Bereit', LISTENING: 'Zuhören', THINKING: 'Verarbeiten', SPEAKING: 'Sprechen', MUTED: 'Stumm', OFFLINE: 'Nicht verbunden' }[value]) : value; }
+async function poll() { if (!state || document.getElementById('login'))
+    return; try {
+    const fresh = await api('state');
+    state = fresh;
+    if (!dirty) {
+        draft = JSON.parse(JSON.stringify(fresh.config));
+        document.documentElement.dataset.theme = draft.theme;
+    }
+    const dot = document.getElementById('connection-dot');
+    if (dot)
+        dot.className = 'dot ' + (fresh.status.connected ? 'online' : '');
+    const label = document.getElementById('connection-label');
+    if (label)
+        label.textContent = draft.name + ' · ' + t(fresh.status.connected ? 'Verbunden' : 'Nicht verbunden');
+    const night = document.getElementById('night-sensor');
+    if (night)
+        night.textContent = t(fresh.status.lightSensorAvailable ? 'Lichtsensor verfügbar' : 'Kein Lichtsensor verfügbar') + ' · ' + (fresh.status.lux == null ? '–' : fresh.status.lux.toFixed(1)) + ' lx';
+    const voice = document.getElementById('voice-status');
+    if (voice)
+        voice.textContent = voiceLabel(fresh.status.voice);
+}
+catch { } }
+Promise.all(['de', 'en'].map(async (lang) => { catalogs[lang] = await (await fetch('/i18n/' + lang + '.json')).json(); })).then(() => load()).catch(() => login());
+window.setInterval(poll, 5000);
+window.addEventListener('beforeunload', e => { if (dirty) {
+    e.preventDefault();
+    e.returnValue = '';
+} });

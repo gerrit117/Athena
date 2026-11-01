@@ -1,0 +1,32 @@
+--- a/src/hassmic/web.c
++++ b/src/hassmic/web.c
+@@ -67,6 +67,7 @@
+ #include <stdlib.h>
+ #include <string.h>
+ #include <sys/socket.h>
++#include <netinet/in.h>
+ #include <sys/time.h>
+ #include <time.h>
+ #include <unistd.h>
+@@ -783,6 +784,21 @@
+         }
+         if (!found) respond_json(fd, 404, "{\"error\":\"not found\"}");
+     }
++    else if (!strcmp(r.path, "/api/athena/status") && !strcmp(r.method, "GET")) {
++        /* Read-only local observer. No second voice subscriber, no credentials or audio. */
++        struct sockaddr_in peer; socklen_t len = sizeof peer;
++        if (getpeername(fd, (struct sockaddr *)&peer, &len) || peer.sin_family != AF_INET || ntohl(peer.sin_addr.s_addr) != INADDR_LOOPBACK)
++            respond_json(fd, 403, "{\"error\":\"loopback only\"}");
++        else {
++            static const char *const states[] = {"idle", "listening", "thinking", "speaking"};
++            char out[256];
++            pthread_mutex_lock(&core_lock);
++            snprintf(out, sizeof out, "{\"schemaVersion\":1,\"state\":\"%s\",\"connected\":%s,\"muted\":%s,\"levelAvailable\":false}",
++                     states[core_state()], core_ha_linked() ? "true" : "false", core_muted() ? "true" : "false");
++            pthread_mutex_unlock(&core_lock);
++            respond_json(fd, 200, out);
++        }
++    }
+     else if (!strcmp(r.path, "/api/hello")) { char o[2400]; hello_json(o, sizeof o, 1); respond_json(fd, 200, o); }
+     else if (!strncmp(r.path, "/api/vouch/", 11) && !strcmp(r.method, "POST")) vouch_api(fd, &r);
+     else if (!strcmp(r.path, "/api/login") && !strcmp(r.method, "POST")) {

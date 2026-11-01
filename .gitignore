@@ -1,0 +1,15 @@
+.gradle/
+.kotlin/
+**/build/
+local.properties
+*.jks
+*.keystore
+vendor/
+Athena.apk
+*.bin
+*.img
+.venv*/
+__pycache__/
+*.pyc
+downloads/
+web/node_modules/
