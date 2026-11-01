@@ -21,7 +21,6 @@ Die vollständige Vorbereitung des Audiounterbaus ist bisher nur unter Linux bes
 | Originales Fire OS, noch kein Root | Zuerst [Root-Anleitung](root.de.md), dann hier weiter |
 | Root vorhanden, echo-dot-assist noch nicht installiert | Abschnitt 2 |
 | Root und passendes echo-dot-assist bereits vorhanden | Abschnitt 3 |
-| Frühere Einrichtung mit VACAV / View Assist | Erst [Sprachanschluss umstellen](migration.de.md), dann Abschnitt 3 |
 
 Ein vorhandenes Root-Gerät wird für eine reine Athena-Installation nicht zurückgesetzt. Das Installationsskript flasht keine Firmware.
 
@@ -29,7 +28,7 @@ Ein vorhandenes Root-Gerät wird für eine reine Athena-Installation nicht zurü
 
 Dieser Abschnitt wird nur benötigt, wenn der Audiounterbau noch fehlt. Er übernimmt Mikrofone, Aktivierungswort, Sprachübertragung und Antwortwiedergabe.
 
-Im entpackten Athena-Verzeichnis:
+Verwende einen Verzeichnispfad ohne Leerzeichen. Im entpackten Athena-Verzeichnis:
 
 ```sh
 bash scripts/prepare-eda.sh --fetch
@@ -81,7 +80,7 @@ Ein unbekannter Audiodienst oder ein fremder Override wird nicht überschrieben.
 
 Falls ein bereits gesetzter Schlüssel benötigt wird, liegt er bei diesem Unterbau unter `/data/local/hassmic/state/api_key`. Er lässt sich über Root-ADB lokal ablesen. Nur in den HA-Einrichtungsdialog übernehmen; nicht in Screenshots, Issues oder das Repository kopieren.
 
-Die ESPHome-Integration ist Bestandteil von HA. Ein ESPHome-Builder beziehungsweise eine ESPHome-App zum Kompilieren von Mikrocontroller-Firmware ist dafür nicht nötig. VACAV, View Assist und Music Assistant werden für diesen Weg nicht benötigt. Musikdienste sind ein separater, optionaler Ausbau.
+Die ESPHome-Integration ist Bestandteil von HA. Ein ESPHome-Builder beziehungsweise eine ESPHome-App zum Kompilieren von Mikrocontroller-Firmware ist dafür nicht nötig. Die Sprachverbindung läuft direkt zwischen echo-dot-assist und Home Assistant. Musikdienste können separat eingerichtet werden.
 
 ## 5. Anzeige und WebUI einrichten
 

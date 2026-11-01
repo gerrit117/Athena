@@ -4,9 +4,9 @@
 
 **Deutsch** · [English](README.md) · [Installation](docs/install.de.md) · [Root-Anleitung](docs/root.de.md)
 
-Athena ist eine Android-App mit eigener Web-Konfiguration. Die Anzeige verbindet sich direkt mit Home Assistant. **echo-dot-assist** übernimmt Mikrofone, Aktivierungswort und Sprachantworten. Der direkte Aufbau benötigt weder Lovelace-Dashboards noch View Assist, VACAV oder Music Assistant.
+Athena ist eine Android-App mit eigener Web-Konfiguration. Die Anzeige verbindet sich direkt mit Home Assistant. **echo-dot-assist** übernimmt Mikrofone, Aktivierungswort und Sprachantworten. Die Sprache wird über die ESPHome-Integration angebunden. Athena stellt die Oberfläche und die lokalen Einstellungen bereit.
 
-Aktuell geprüft: **Echo Show 8, 2. Generation (2021), A8H3N2 / athena, Firmware PS75741.7080N**. Andere Modelle sind bisher nicht unterstützt. Das ist eine frühe Testversion, kein fertiges Geräteabbild.
+Aktuell geprüft: **Echo Show 8, 2. Generation (2021), A8H3N2 / athena, Firmware PS75741.7080N**. Andere Modelle sind bisher nicht unterstützt. 
 
 ![Athena am Echo](docs/screenshots/home.png)
 ![Gerätesuche mit Filtern](docs/screenshots/search.jpg)
@@ -25,6 +25,8 @@ Aktuell geprüft: **Echo Show 8, 2. Generation (2021), A8H3N2 / athena, Firmware
 
 ## Installation
 
+[Download v0.2.0-alpha.1](https://github.com/gerrit117/Athena/releases/tag/v0.2.0-alpha.1)
+
 Root und der geprüfte echo-dot-assist-Unterbau sind vorhanden:
 
 ```sh
@@ -36,13 +38,11 @@ Das Skript prüft Gerät, Firmware und Audiodienst. Es entsperrt keinen Bootload
 
 Noch originales Fire OS? Mit der [Root-Anleitung](docs/root.de.md) beginnen. Dort stehen Hardware, Originaldownloads, vollständige Prüfsummen und die geprüfte Reihenfolge. Firmware, Unlocker und Root-Pakete werden nicht mitgeliefert.
 
-Schon mit VACAV eingerichtet? Zuerst die [Sprachverbindung umstellen](docs/migration.de.md). Nur eine Integration darf die Sprachverbindung dieses Echo übernehmen.
 
 ## Aktuelle Grenzen
 
 - Der vollständige Root-/Audioaufbau ist für Linux und die genannte Hardware/Firmware beschrieben.
-- Direkte ESPHome-Einbindung und Pipeline-Auswahl wurden am Gerät geprüft. Beim anschließenden Sprachbefehl trat ein bekanntes HTTP-400-Problem der HA-Testpipeline auf. Eine vollständige erfolgreiche Antwort nach der Umstellung ist noch nicht bestätigt.
-- Eigenständiger Autostart wurde nach vollständigem Neustart bei deaktiviertem VACAV geprüft. Kameraunterstützung hängt vom HA-Streamformat ab. WebRTC und Gegensprechen fehlen.
+- Autostart öffnet Athena nach dem Gerätestart. Kameraunterstützung hängt vom HA-Streamformat ab. WebRTC und Gegensprechen fehlen.
 - Sprachstatus derzeit ohne Mikrofonpegel und Transkript. Theme-Paketinstallation ist noch nicht implementiert.
 - Die Status-Erweiterung ist an den geprüften Audiobuild gebunden. Fremde Builds/Overrides werden nicht überschrieben.
 - Bisherige Test-APKs nutzen einen lokalen Debug-Schlüssel. Ein späterer Signaturwechsel benötigt eine Umstellungsanleitung.
@@ -54,10 +54,10 @@ Schon mit VACAV eingerichtet? Zuerst die [Sprachverbindung umstellen](docs/migra
 |---|---|
 | [Gamer92000/echo-dot-assist](https://github.com/Gamer92000/echo-dot-assist) | Echo-Audio, Aktivierungswort, ESPHome-kompatible Sprachübertragung und Einrichtung. Geprüfter Stand `1c00727d332c3b0ee4d13b59f702c78839431694`. |
 | [saiyaku-athena auf XDA](https://xdaforums.com/t/unlock-root-twrp-unbrick-amazon-echo-show-8-2nd-gen-2021-athena.4804958/) | Bootloader-Unlock, Recovery und Root. |
-| [baileyboy0304/ES8_Athena](https://github.com/baileyboy0304/ES8_Athena) | Wissen aus erster Geräteeinrichtung, Firmwareprüfung und Display-Konfiguration. |
-| [baileyboy0304/VACAV](https://github.com/baileyboy0304/VACAV) | Bisheriger Anzeige-/Sprachaufbau und Umstellung. |
-| [MSP1974/ViewAssistCompanionApp](https://github.com/MSP1974/ViewAssistCompanionApp) | Vorherige Android-Display-App. |
-| [dinki/View-Assist](https://github.com/dinki/View-Assist), [View-Assist-Integration](https://github.com/dinki/view_assist_integration) | Bisheriges Dashboard-/Anzeigekonzept und Integration. |
+| [baileyboy0304/ES8_Athena](https://github.com/baileyboy0304/ES8_Athena) | Geräteeinrichtung und Firmwareprüfung. |
+| [baileyboy0304/VACAV](https://github.com/baileyboy0304/VACAV) | Grundlagen der Echo-Anzeige und Audioanbindung. |
+| [MSP1974/ViewAssistCompanionApp](https://github.com/MSP1974/ViewAssistCompanionApp) | Android-Display-App. |
+| [dinki/View-Assist](https://github.com/dinki/View-Assist), [View-Assist-Integration](https://github.com/dinki/view_assist_integration) | Anzeigekonzepte und Home-Assistant-Integration. |
 | [Home Assistant](https://github.com/home-assistant/core) | Entitäts-APIs, ESPHome und Assist-Pipeline. |
 
 Patch und MIT-Lizenzhinweis des Audiounterbaus liegen unter [bridge/](bridge/). Das ursprüngliche Systemprogramm bleibt erhalten. Die Projekte sind eigenständig; ihre Erwähnung bedeutet nicht, dass deren Autoren Athena betreuen.

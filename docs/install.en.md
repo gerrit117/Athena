@@ -21,7 +21,6 @@ The complete audio setup is currently documented for Linux. The Python installer
 | Stock Fire OS, no root | Follow the [root guide](root.en.md), then return here |
 | Root available, echo-dot-assist missing | Section 2 |
 | Root and compatible echo-dot-assist installed | Section 3 |
-| Existing VACAV / View Assist setup | [Migrate voice ownership](migration.en.md), then section 3 |
 
 Installing Athena on an already rooted device does not require a reset. The Athena installer never flashes firmware.
 
@@ -29,7 +28,7 @@ Installing Athena on an already rooted device does not require a reset. The Athe
 
 Skip this section if the audio service is already installed. It provides microphone capture, wake words, voice transport and reply playback.
 
-From the Athena directory:
+Use a directory path without spaces. From the Athena directory:
 
 ```sh
 bash scripts/prepare-eda.sh --fetch
@@ -81,7 +80,7 @@ An unknown audio build or a different override will not be overwritten. `--app-o
 
 For an existing keyed installation, the key is stored at `/data/local/hassmic/state/api_key`. It can be read locally through root ADB. Copy it only into the HA setup dialog; never into screenshots, issues or this repository.
 
-The ESPHome integration is built into HA. No ESPHome firmware builder app is required. VACAV, View Assist and Music Assistant are not required for this setup. Music providers are a separate optional feature.
+The ESPHome integration is built into HA. No ESPHome firmware builder app is required. Voice connects directly between echo-dot-assist and Home Assistant. Music providers can be configured separately.
 
 ## 5. Configure the display and WebUI
 

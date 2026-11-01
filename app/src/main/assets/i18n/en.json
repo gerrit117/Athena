@@ -182,7 +182,6 @@
   "Es zählen nur neue Zustandsänderungen, keine beim Verbinden gelesenen Zustände. Danach kehrt Athena zur vorherigen Ansicht zurück. Kameras verwenden HLS, soweit HA es bereitstellt; sonst werden Einzelbilder angezeigt. Kameraton ist ausgeschaltet.": "Only new state changes trigger the view, not states read during connection. Athena then returns to the previous view. Cameras use HLS when HA provides it; otherwise snapshots are shown. Camera audio is muted.",
   "Kamera auf Gerät anzeigen": "Show camera on device",
   "Zur Startseite": "Back to home",
-  "App und WebUI verwenden dieselbe Konfiguration. Die vorhandene VACAV-Installation bleibt installiert.": "The app and web UI share the same configuration. The existing VACAV installation stays installed.",
   "Konfiguration exportieren": "Export configuration",
   "Konfiguration importieren": "Import configuration",
   "Exporte enthalten keine Zugriffstokens oder Zugangscodes.": "Exports contain no access tokens or pairing codes.",
@@ -259,5 +258,6 @@
   "Nachthelligkeit · 1 bis 20 %": "Night brightness · 1 to 20%",
   "Datum nachts anzeigen": "Show date at night",
   "Statussymbole nachts anzeigen": "Show status icons at night",
-  "Tippen zeigt die normale Ansicht für 30 Sekunden. Sprache und Klingeln bleiben aktiv.": "Tap to show the normal view for 30 seconds. Voice and doorbell events remain active."
+  "Tippen zeigt die normale Ansicht für 30 Sekunden. Sprache und Klingeln bleiben aktiv.": "Tap to show the normal view for 30 seconds. Voice and doorbell events remain active.",
+  "App und WebUI verwenden dieselbe lokal gespeicherte Konfiguration.": "The app and WebUI use the same locally stored configuration."
 }
