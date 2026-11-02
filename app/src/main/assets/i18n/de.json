@@ -281,5 +281,12 @@
   "HA Alarm Clock · Athena ist in HA nicht eingerichtet": "HA Alarm Clock · Athena ist in HA nicht eingerichtet",
   "Für die Weckersynchronisierung wird ein HA-Administratorkonto benötigt": "Für die Weckersynchronisierung wird ein HA-Administratorkonto benötigt",
   "Weckersynchronisierung fehlgeschlagen": "Weckersynchronisierung fehlgeschlagen",
-  "HA Alarm Clock benötigt die Athena-Erweiterung": "HA Alarm Clock benötigt die Athena-Erweiterung"
+  "HA Alarm Clock benötigt die Athena-Erweiterung": "HA Alarm Clock benötigt die Athena-Erweiterung",
+  "Kameras auswählen": "Kameras auswählen",
+  "Kameras in der Übersicht": "Kameras in der Übersicht",
+  "Klingelkamera": "Klingelkamera",
+  "HA kann auch Karten und andere Bilder als Kamera-Entitäten melden. Wähle nur die gewünschten Kameras aus.": "HA kann auch Karten und andere Bilder als Kamera-Entitäten melden. Wähle nur die gewünschten Kameras aus.",
+  "Noch keine Kameras ausgewählt. Die Klingelkamera wird separat eingestellt.": "Noch keine Kameras ausgewählt. Die Klingelkamera wird separat eingestellt.",
+  "Übernehmen": "Übernehmen",
+  "Ungültige Kameraauswahl": "Ungültige Kameraauswahl"
 }

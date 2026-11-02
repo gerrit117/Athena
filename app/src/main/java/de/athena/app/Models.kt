@@ -29,7 +29,7 @@ data class AppConfig(
     val homeGrouping: String = "none", val language: String = "de",
     val nightMode: String = "off", val nightLux: Float = 5f, val nightDelay: Int = 30,
     val nightBrightness: Int = 2, val nightShowDate: Boolean = false, val nightShowStatus: Boolean = true,
-    val alarmSync: Boolean = true, val voiceSatellite: String = ""
+    val alarmSync: Boolean = true, val voiceSatellite: String = "", val visibleCameras: List<String> = emptyList()
 ) {
     fun json(): JSONObject = JSONObject().put("schemaVersion", 1).put("name", name).put("haUrl", haUrl)
         .put("theme", theme).put("animation", animation).put("favorites", JSONArray(favorites)).put("domains", JSONArray(domains))
@@ -40,7 +40,7 @@ data class AppConfig(
         .put("language",language)
         .put("nightMode",nightMode).put("nightLux",nightLux).put("nightDelay",nightDelay)
         .put("nightBrightness",nightBrightness).put("nightShowDate",nightShowDate).put("nightShowStatus",nightShowStatus)
-        .put("alarmSync",alarmSync).put("voiceSatellite",voiceSatellite)
+        .put("alarmSync",alarmSync).put("voiceSatellite",voiceSatellite).put("visibleCameras",JSONArray(visibleCameras))
     companion object {
         fun from(j: JSONObject): AppConfig {
             require(j.optInt("schemaVersion", 1) == 1) { "Unbekannte Konfigurationsversion" }
@@ -72,13 +72,15 @@ data class AppConfig(
             fun strings(key: String, fallback: List<String> = emptyList()) = j.optJSONArray(key)?.strings()?.distinct() ?: fallback
             val satellite=j.optString("voiceSatellite")
             require(satellite.isEmpty() || satellite.matches(Regex("assist_satellite\\.[a-z0-9_]+"))) {"Ungültiger Sprachsatellit"}
+            val cameras=strings("visibleCameras")
+            require(cameras.size<=64 && cameras.all {it.matches(Regex("camera\\.[a-z0-9_]+"))}) {"Ungültige Kameraauswahl"}
             val camera = j.optString("camera")
             require(camera.isEmpty() || camera.matches(Regex("camera\\.[a-z0-9_]+"))) { "Ungültige Kamera" }
             val doorbell = j.optString("doorbell")
             require(doorbell.isEmpty() || doorbell.matches(Regex("(binary_sensor|event|sensor|input_boolean)\\.[a-z0-9_]+"))) { "Ungültige Klingel-Entität" }
             return AppConfig(name, url, theme, anim, strings("favorites"), strings("domains", AppConfig().domains), strings("areas"), camera,
                 doorbell, j.optString("doorbellValue", "on"), seconds, j.optString("weather"), j.optBoolean("autoStart"), j.optBoolean("reducedMotion"),ringtone,ringVolume,grouping,language,
-                nightMode,nightLux,nightDelay,nightBrightness,j.optBoolean("nightShowDate"),j.optBoolean("nightShowStatus",true),j.optBoolean("alarmSync",true),satellite)
+                nightMode,nightLux,nightDelay,nightBrightness,j.optBoolean("nightShowDate"),j.optBoolean("nightShowStatus",true),j.optBoolean("alarmSync",true),satellite,cameras)
         }
     }
 }

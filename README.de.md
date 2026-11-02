@@ -21,6 +21,7 @@ Aktuell geprüft: **Echo Show 8, 2. Generation (2021), A8H3N2 / athena, Firmware
 - Friendly Names als Hauptanzeige, Entitäts-IDs darunter. Suche nach Name, ID, Gerät und Raum; zusätzliche Kategorie-/Raumfilter und seitenweises Nachladen im Browser.
 - Licht, Schalter, Rollläden, Szenen und Thermostat-Sollwerte bedienen. Weitere Entitäten als Status anzeigen.
 - Helles/dunkles Theme und austauschbare Sprachvisualisierungen. Automatische Anzeige des echten lokalen Sprachzustands.
+- Frei wählbare Kameras für die Übersicht; HA-Karten und andere Bildentitäten müssen nicht angezeigt werden. Klingelkamera separat auswählbar.
 - Kameraansicht über HLS, sofern unterstützt, sonst aktualisierte Einzelbilder. Einstellbarer Klingelauslöser, Anzeigedauer und lokaler Klingelton.
 - WebUI unter `http://ECHO-IP:26804`, gekoppelt mit vierstelligem Einmalcode am Echo.
 - Deutsche/englische Übersetzungskataloge. Optionaler Autostart. HA-Zugangsdaten werden verschlüsselt gespeichert und nicht exportiert.

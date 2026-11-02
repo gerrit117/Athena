@@ -21,6 +21,7 @@ Tested hardware: **Echo Show 8, 2nd generation (2021), A8H3N2 / athena, firmware
 - Friendly names and secondary entity IDs. Search by name, ID, device and room, with category/room filters and paged web results.
 - Controls for lights, switches, covers, scenes and thermostat setpoints. Other entities can show status.
 - Light/dark themes and interchangeable voice visualizations. Automatic display follows actual local listening, processing and speaking states.
+- Explicit camera selection for the overview; HA map/image entities can stay hidden. Separate doorbell camera selection.
 - Camera view using HLS where supported, with refreshed snapshots as a fallback. Configurable doorbell trigger, camera duration and local ringtone.
 - WebUI at `http://ECHO-IP:26804`, paired through a four-digit one-time code generated on the Echo.
 - German and English catalogs for app and WebUI. Optional autostart. Encrypted HA credentials, omitted from exports.

@@ -361,12 +361,35 @@ class MainActivity: ComponentActivity() {
     androidx.compose.foundation.text.selection.SelectionContainer { Text(text, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(vertical=4.dp)) }
 }
 @Composable private fun CamerasScreen(r: AthenaRuntime) {
-    val cameras = r.entities.filter {it.domain == "camera"}
-    if(cameras.isEmpty()) EmptyState(r.t("Kameras"), r.t("Sobald HA verbunden ist, erscheinen hier deine Kamera-Entitäten."), r.t("Einstellungen")) {r.page="settings"}
-    else LazyVerticalGrid(columns=GridCells.Fixed(2), horizontalArrangement=Arrangement.spacedBy(12.dp), verticalArrangement=Arrangement.spacedBy(12.dp)) {
-        items(cameras, key={it.id}) { camera -> Card(onClick={r.shownCamera=camera.id;r.page="camera"}, colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface)) {
-            Column { CameraImage(r, camera.id, Modifier.fillMaxWidth().height(125.dp), false); Text(camera.name, Modifier.padding(14.dp), fontWeight=FontWeight.SemiBold) }
-        } }
+    var selecting by remember {mutableStateOf(false)}
+    var query by remember {mutableStateOf("")}
+    var chosen by remember(r.config.visibleCameras) {mutableStateOf(r.config.visibleCameras.toSet())}
+    val all=r.entities.filter {it.domain=="camera"}
+    val cameras=all.filter {it.id in r.config.visibleCameras}
+    Column(Modifier.fillMaxSize(),verticalArrangement=Arrangement.spacedBy(12.dp)) {
+        Row(verticalAlignment=Alignment.CenterVertically) {
+            Text(r.t("Kameras"),style=MaterialTheme.typography.headlineSmall,modifier=Modifier.weight(1f))
+            if(selecting) Button(onClick={r.updateConfig {it.copy(visibleCameras=chosen.toList())};selecting=false}) {Text(r.t("Übernehmen"))}
+            else OutlinedButton(onClick={chosen=r.config.visibleCameras.toSet();selecting=true}) {Text(r.t("Kameras auswählen"))}
+        }
+        if(selecting) {
+            Text(r.t("HA kann auch Karten und andere Bilder als Kamera-Entitäten melden. Wähle nur die gewünschten Kameras aus."),style=MaterialTheme.typography.bodySmall)
+            OutlinedTextField(query,{query=it},label={Text(r.t("Name, Gerät oder Entitäts-ID suchen …"))},singleLine=true,modifier=Modifier.fillMaxWidth())
+            LazyColumn(Modifier.weight(1f)) {
+                items(all.filter {e -> listOf(e.name,e.id,e.deviceName).joinToString(" ").contains(query,true)},key={it.id}) {camera ->
+                    Row(Modifier.fillMaxWidth().clickable {chosen=if(camera.id in chosen)chosen-camera.id else chosen+camera.id}.padding(vertical=8.dp),verticalAlignment=Alignment.CenterVertically) {
+                        Checkbox(camera.id in chosen,{checked -> chosen=if(checked)chosen+camera.id else chosen-camera.id})
+                        Column {Text(camera.name);Text(camera.id,style=MaterialTheme.typography.bodySmall)}
+                    }
+                }
+            }
+        } else if(cameras.isEmpty()) {
+            Text(r.t("Noch keine Kameras ausgewählt. Die Klingelkamera wird separat eingestellt."))
+        } else LazyVerticalGrid(columns=GridCells.Fixed(2),modifier=Modifier.weight(1f), horizontalArrangement=Arrangement.spacedBy(12.dp), verticalArrangement=Arrangement.spacedBy(12.dp)) {
+            items(cameras,key={it.id}) {camera -> Card(onClick={r.shownCamera=camera.id;r.page="camera"},colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface)) {
+                Column {CameraImage(r,camera.id,Modifier.fillMaxWidth().height(125.dp),false);Text(camera.name,Modifier.padding(14.dp),fontWeight=FontWeight.SemiBold)}
+            }}
+        }
     }
 }
 @Composable fun CameraImage(r: AthenaRuntime, id: String, modifier: Modifier, refresh: Boolean) {
