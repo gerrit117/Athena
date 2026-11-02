@@ -22,6 +22,7 @@ Aktuell geprüft: **Echo Show 8, 2. Generation (2021), A8H3N2 / athena, Firmware
 - Licht, Schalter, Rollläden, Szenen und Thermostat-Sollwerte bedienen. Weitere Entitäten als Status anzeigen.
 - Helles/dunkles Theme und austauschbare Sprachvisualisierungen. Automatische Anzeige des echten lokalen Sprachzustands.
 - Frei wählbare Kameras für die Übersicht; HA-Karten und andere Bildentitäten müssen nicht angezeigt werden. Klingelkamera separat auswählbar.
+- Optionaler Türöffner mit eigener Entitätsauswahl. Schaltfläche im automatischen Klingelbild; Schloss, Taster, Skript oder Aktor über HA. [Kameras und Klingel einrichten](docs/doorbell.de.md).
 - Kameraansicht über HLS, sofern unterstützt, sonst aktualisierte Einzelbilder. Einstellbarer Klingelauslöser, Anzeigedauer und lokaler Klingelton.
 - WebUI unter `http://ECHO-IP:26804`, gekoppelt mit vierstelligem Einmalcode am Echo.
 - Deutsche/englische Übersetzungskataloge. Optionaler Autostart. HA-Zugangsdaten werden verschlüsselt gespeichert und nicht exportiert.

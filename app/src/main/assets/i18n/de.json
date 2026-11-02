@@ -288,5 +288,21 @@
   "HA kann auch Karten und andere Bilder als Kamera-Entitäten melden. Wähle nur die gewünschten Kameras aus.": "HA kann auch Karten und andere Bilder als Kamera-Entitäten melden. Wähle nur die gewünschten Kameras aus.",
   "Noch keine Kameras ausgewählt. Die Klingelkamera wird separat eingestellt.": "Noch keine Kameras ausgewählt. Die Klingelkamera wird separat eingestellt.",
   "Übernehmen": "Übernehmen",
-  "Ungültige Kameraauswahl": "Ungültige Kameraauswahl"
+  "Ungültige Kameraauswahl": "Ungültige Kameraauswahl",
+  "Türöffner · optional": "Türöffner · optional",
+  "Türöffner": "Türöffner",
+  "Türöffner auswählen": "Türöffner auswählen",
+  "Aktion bei Schloss-Entitäten": "Aktion bei Schloss-Entitäten",
+  "Entriegeln": "Entriegeln",
+  "Falle öffnen": "Falle öffnen",
+  "Tür öffnen": "Tür öffnen",
+  "Öffnungsbefehl gesendet": "Öffnungsbefehl gesendet",
+  "Öffnungsbefehl wird gesendet …": "Öffnungsbefehl wird gesendet …",
+  "Tür konnte nicht geöffnet werden": "Tür konnte nicht geöffnet werden",
+  "Türöffner ist nicht verfügbar": "Türöffner ist nicht verfügbar",
+  "Ohne Auswahl bleibt die Funktion ausgeschaltet. Die Schaltfläche erscheint nur im automatisch geöffneten Klingelbild.": "Ohne Auswahl bleibt die Funktion ausgeschaltet. Die Schaltfläche erscheint nur im automatisch geöffneten Klingelbild.",
+  "Bei Schaltern verwendet Athena Einschalten. Einen nötigen Öffnungsimpuls in HA oder am Aktor einrichten.": "Bei Schaltern verwendet Athena Einschalten. Einen nötigen Öffnungsimpuls in HA oder am Aktor einrichten.",
+  "Ungültiger Türöffner": "Ungültiger Türöffner",
+  "Ungültige Türöffner-Aktion": "Ungültige Türöffner-Aktion",
+  "Nicht unterstützter Türöffner": "Nicht unterstützter Türöffner"
 }

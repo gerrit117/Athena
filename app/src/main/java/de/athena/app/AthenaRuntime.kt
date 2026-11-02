@@ -26,6 +26,8 @@ class AthenaRuntime(val context: Context) {
     var voice by mutableStateOf(VoiceState()); private set
     var page by mutableStateOf("home")
     var shownCamera by mutableStateOf("")
+    var doorOpening by mutableStateOf(false);private set
+    var doorOpenerStatus by mutableStateOf("");private set
     var ringActive by mutableStateOf(false)
     var message by mutableStateOf("")
     var webStatus by mutableStateOf(""); private set
@@ -123,12 +125,23 @@ class AthenaRuntime(val context: Context) {
         scope.launch { runCatching { ha.action(e, command, data) }.onFailure { message = it.message ?: "Aktion fehlgeschlagen" } }
     }
     fun showDoorbell() {
+        doorOpenerStatus=""
         peekDayView()
         runCatching {testChime()}.onFailure {message="Klingelton konnte nicht abgespielt werden"}
         if (config.camera.isEmpty()) return
         if (!ringActive) { previousPage = page; previousCamera = shownCamera }
         ringActive = true; shownCamera = config.camera; page = "camera"
         ringJob?.cancel(); ringJob = scope.launch { delay(config.cameraSeconds * 1000L); closeCamera() }
+    }
+    fun openDoor() {
+        if(doorOpening || !ringActive || page!="camera" || config.doorOpener.isEmpty())return
+        val target=config.doorOpener;val action=config.doorLockAction
+        doorOpening=true;doorOpenerStatus=""
+        scope.launch {
+            try {ha.openDoor(target,action);doorOpenerStatus="Öffnungsbefehl gesendet"}
+            catch(error: Exception) {doorOpenerStatus=error.message ?: "Tür konnte nicht geöffnet werden"}
+            finally {delay(1500);doorOpening=false}
+        }
     }
     fun closeCamera() {
         ringJob?.cancel()

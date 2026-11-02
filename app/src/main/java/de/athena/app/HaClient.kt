@@ -148,6 +148,12 @@ class HaClient(
         areasChanged(areaNames, entityAreas)
         emit()
     }
+    suspend fun openDoor(entityId: String,lockAction: String) {
+        val (domain,service)=doorOpeningAction(entityId,lockAction)
+        check(entities[entityId]?.available==true) {"Türöffner ist nicht verfügbar"}
+        request(JSONObject().put("type","call_service").put("domain",domain).put("service",service)
+            .put("target",JSONObject().put("entity_id",entityId)).put("service_data",JSONObject()))
+    }
     suspend fun syncAlarms(payload: JSONObject): JSONObject = withContext(Dispatchers.IO) {
         check(authenticated)
         val req=Request.Builder().url("$base/api/ha_alarmclock/sync").header("Authorization","Bearer $token")

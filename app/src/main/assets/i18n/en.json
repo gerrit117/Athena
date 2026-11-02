@@ -288,5 +288,21 @@
   "HA kann auch Karten und andere Bilder als Kamera-Entitäten melden. Wähle nur die gewünschten Kameras aus.": "HA may expose maps and other images as camera entities. Select only the cameras you want to display.",
   "Noch keine Kameras ausgewählt. Die Klingelkamera wird separat eingestellt.": "No cameras selected yet. The doorbell camera is configured separately.",
   "Übernehmen": "Apply",
-  "Ungültige Kameraauswahl": "Invalid camera selection"
+  "Ungültige Kameraauswahl": "Invalid camera selection",
+  "Türöffner · optional": "Door opener · optional",
+  "Türöffner": "Door opener",
+  "Türöffner auswählen": "Select door opener",
+  "Aktion bei Schloss-Entitäten": "Action for lock entities",
+  "Entriegeln": "Unlock",
+  "Falle öffnen": "Unlatch",
+  "Tür öffnen": "Open door",
+  "Öffnungsbefehl gesendet": "Opening command sent",
+  "Öffnungsbefehl wird gesendet …": "Sending opening command …",
+  "Tür konnte nicht geöffnet werden": "Could not open door",
+  "Türöffner ist nicht verfügbar": "Door opener is unavailable",
+  "Ohne Auswahl bleibt die Funktion ausgeschaltet. Die Schaltfläche erscheint nur im automatisch geöffneten Klingelbild.": "Without a selection this feature stays disabled. The button appears only in the automatic doorbell camera view.",
+  "Bei Schaltern verwendet Athena Einschalten. Einen nötigen Öffnungsimpuls in HA oder am Aktor einrichten.": "For switches Athena uses turn on. Configure any required opening pulse in HA or on the actuator.",
+  "Ungültiger Türöffner": "Invalid door opener",
+  "Ungültige Türöffner-Aktion": "Invalid door opener action",
+  "Nicht unterstützter Türöffner": "Unsupported door opener"
 }

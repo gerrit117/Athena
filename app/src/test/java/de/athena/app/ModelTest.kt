@@ -24,8 +24,8 @@ class ModelTest {
         assertTrue(gate.consume(gate.open()))
     }
     @Test fun configurationRoundTripsIncludingFiltersAndIndependentDesignChoices() {
-        val c = AppConfig(name="Küche", haUrl="http://192.168.1.5:8123", theme="dark", animation="pulse",
-            favorites=listOf("light.a", "cover.b"), areas=listOf("kitchen"), camera="camera.front", doorbell="binary_sensor.bell")
+        val c = AppConfig(name="Küche", haUrl="http://homeassistant.local:8123", theme="dark", animation="pulse",
+            favorites=listOf("light.a", "cover.b"), areas=listOf("kitchen"), camera="camera.front", doorbell="binary_sensor.bell",visibleCameras=listOf("camera.front"),doorOpener="button.door",doorLockAction="unlock")
         assertEquals(c, AppConfig.from(c.json()))
         assertFalse(c.json().has("haToken"))
     }

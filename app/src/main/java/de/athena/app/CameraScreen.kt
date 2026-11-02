@@ -61,5 +61,15 @@ import kotlinx.coroutines.delay
             if(!ready && id.isNotEmpty()) CameraImage(r,id,Modifier.fillMaxSize(),true)
             if(id.isEmpty()) Text(r.t("Keine Kamera ausgewählt"))
         }
+        if(r.ringActive && r.config.doorOpener.isNotEmpty()) {
+            val available=r.connected && r.entities.firstOrNull {it.id==r.config.doorOpener}?.available==true
+            Row(Modifier.fillMaxWidth().padding(top=12.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(16.dp)) {
+                Button(onClick={r.openDoor()},enabled=available && !r.doorOpening,contentPadding=PaddingValues(horizontal=30.dp,vertical=16.dp)) {
+                    Text(r.t(if(r.doorOpening)"Öffnungsbefehl wird gesendet …" else "Tür öffnen"))
+                }
+                if(r.doorOpenerStatus.isNotEmpty())Text(r.t(r.doorOpenerStatus),style=MaterialTheme.typography.bodyMedium)
+                else if(!available)Text(r.t("Türöffner ist nicht verfügbar"),style=MaterialTheme.typography.bodyMedium)
+            }
+        }
     }
 }

@@ -29,7 +29,8 @@ data class AppConfig(
     val homeGrouping: String = "none", val language: String = "de",
     val nightMode: String = "off", val nightLux: Float = 5f, val nightDelay: Int = 30,
     val nightBrightness: Int = 2, val nightShowDate: Boolean = false, val nightShowStatus: Boolean = true,
-    val alarmSync: Boolean = true, val voiceSatellite: String = "", val visibleCameras: List<String> = emptyList()
+    val alarmSync: Boolean = true, val voiceSatellite: String = "", val visibleCameras: List<String> = emptyList(),
+    val doorOpener: String = "", val doorLockAction: String = "unlock"
 ) {
     fun json(): JSONObject = JSONObject().put("schemaVersion", 1).put("name", name).put("haUrl", haUrl)
         .put("theme", theme).put("animation", animation).put("favorites", JSONArray(favorites)).put("domains", JSONArray(domains))
@@ -40,7 +41,7 @@ data class AppConfig(
         .put("language",language)
         .put("nightMode",nightMode).put("nightLux",nightLux).put("nightDelay",nightDelay)
         .put("nightBrightness",nightBrightness).put("nightShowDate",nightShowDate).put("nightShowStatus",nightShowStatus)
-        .put("alarmSync",alarmSync).put("voiceSatellite",voiceSatellite).put("visibleCameras",JSONArray(visibleCameras))
+        .put("alarmSync",alarmSync).put("voiceSatellite",voiceSatellite).put("visibleCameras",JSONArray(visibleCameras)).put("doorOpener",doorOpener).put("doorLockAction",doorLockAction)
     companion object {
         fun from(j: JSONObject): AppConfig {
             require(j.optInt("schemaVersion", 1) == 1) { "Unbekannte Konfigurationsversion" }
@@ -72,6 +73,9 @@ data class AppConfig(
             fun strings(key: String, fallback: List<String> = emptyList()) = j.optJSONArray(key)?.strings()?.distinct() ?: fallback
             val satellite=j.optString("voiceSatellite")
             require(satellite.isEmpty() || satellite.matches(Regex("assist_satellite\\.[a-z0-9_]+"))) {"Ungültiger Sprachsatellit"}
+            val doorOpener=j.optString("doorOpener");val doorLockAction=j.optString("doorLockAction","unlock")
+            require(doorLockAction in setOf("unlock","open")) {"Ungültige Türöffner-Aktion"}
+            if(doorOpener.isNotEmpty())doorOpeningAction(doorOpener,doorLockAction)
             val cameras=strings("visibleCameras")
             require(cameras.size<=64 && cameras.all {it.matches(Regex("camera\\.[a-z0-9_]+"))}) {"Ungültige Kameraauswahl"}
             val camera = j.optString("camera")
@@ -80,7 +84,7 @@ data class AppConfig(
             require(doorbell.isEmpty() || doorbell.matches(Regex("(binary_sensor|event|sensor|input_boolean)\\.[a-z0-9_]+"))) { "Ungültige Klingel-Entität" }
             return AppConfig(name, url, theme, anim, strings("favorites"), strings("domains", AppConfig().domains), strings("areas"), camera,
                 doorbell, j.optString("doorbellValue", "on"), seconds, j.optString("weather"), j.optBoolean("autoStart"), j.optBoolean("reducedMotion"),ringtone,ringVolume,grouping,language,
-                nightMode,nightLux,nightDelay,nightBrightness,j.optBoolean("nightShowDate"),j.optBoolean("nightShowStatus",true),j.optBoolean("alarmSync",true),satellite,cameras)
+                nightMode,nightLux,nightDelay,nightBrightness,j.optBoolean("nightShowDate"),j.optBoolean("nightShowStatus",true),j.optBoolean("alarmSync",true),satellite,cameras,doorOpener,doorLockAction)
         }
     }
 }
@@ -139,4 +143,19 @@ data class PackageManifest(val id: String, val kind: String, val apiVersion: Int
             return PackageManifest(id, kind, api, j.getString("version"))
         }
     }
+}
+
+/** Only fixed HA actions, never an arbitrary service supplied by web input. */
+fun doorOpeningAction(entityId: String,lockAction: String): Pair<String,String> {
+    require(entityId.matches(Regex("[a-z_]+\\.[a-z0-9_]+"))) {"Ungültiger Türöffner"}
+    require(lockAction in setOf("unlock","open")) {"Ungültige Türöffner-Aktion"}
+    val domain=entityId.substringBefore('.')
+    val action=when(domain) {
+        "lock" -> lockAction
+        "button","input_button" -> "press"
+        "script","switch","input_boolean" -> "turn_on"
+        "cover" -> "open_cover"
+        else -> throw IllegalArgumentException("Nicht unterstützter Türöffner")
+    }
+    return domain to action
 }

@@ -353,6 +353,7 @@ class MainActivity: ComponentActivity() {
         Text("${r.t("Klingellautstärke")}: ${ringVolume.toInt()} % · ${r.t("zusätzlich gilt die Medienlautstärke")}")
         Slider(value=ringVolume,onValueChange={ringVolume=it},valueRange=0f..100f,onValueChangeFinished={r.updateConfig {it.copy(ringVolume=ringVolume.toInt())}})
         OutlinedButton(onClick={runCatching {r.testChime()}.onFailure {r.message=r.t("Klingelton konnte nicht abgespielt werden")}}) {Text(r.t("Klingelton testen"))}
+        DoorOpenerSettings(r)
         Text(r.t("Klingelauslöser und Kamera wählst du in der WebUI unter Kameras & Klingel."),style=MaterialTheme.typography.bodySmall)
         Text("Athena ${BuildConfig.VERSION_NAME} · ${r.webStatus}", style = MaterialTheme.typography.bodySmall)
     }
