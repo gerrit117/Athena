@@ -11,6 +11,7 @@ Aktuell geprüft: **Echo Show 8, 2. Generation (2021), A8H3N2 / athena, Firmware
 ![Athena am Echo](docs/screenshots/home.png)
 ![Gerätesuche mit Filtern](docs/screenshots/search.jpg)
 ![Night view / Nachtansicht](docs/screenshots/night.png)
+![Lokaler Wecker](docs/screenshots/alarm.png)
 
 ## Funktionen
 

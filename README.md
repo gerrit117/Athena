@@ -11,6 +11,7 @@ Tested hardware: **Echo Show 8, 2nd generation (2021), A8H3N2 / athena, firmware
 ![Athena display](docs/screenshots/home.png)
 ![Device search and filters](docs/screenshots/search.jpg)
 ![Night view / Nachtansicht](docs/screenshots/night.png)
+![Local alarm](docs/screenshots/alarm.png)
 
 ## Features
 
