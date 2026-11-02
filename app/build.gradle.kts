@@ -10,8 +10,8 @@ android {
         applicationId = "de.athena.app"
         minSdk = 28
         targetSdk = 28
-        versionCode = 3
-        versionName = "0.2.0-alpha.1"
+        versionCode = 5
+        versionName = "0.4.0-alpha.1"
     }
     buildFeatures { compose = true; buildConfig = true }
     androidResources {noCompress += "wav"}

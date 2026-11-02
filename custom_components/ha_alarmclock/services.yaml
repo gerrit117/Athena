@@ -1,0 +1,93 @@
+create_alarm:
+  name: Create alarm / Wecker erstellen
+  description: Saves an alarm on Athena. Only confirmed=true means the Echo has saved it. Pending means awaiting delivery.
+  fields:
+    device_id:
+      name: Athena device / Athena-Gerät
+      selector:
+        device:
+          integration: ha_alarmclock
+    time:
+      name: Time / Uhrzeit
+      required: true
+      example: "07:30"
+      selector:
+        text:
+    label:
+      name: Label / Bezeichnung
+      selector:
+        text:
+    repeat:
+      name: Repeat days / Wochentage
+      selector:
+        select:
+          multiple: true
+          options: [mon, tue, wed, thu, fri, sat, sun]
+    volume:
+      name: Volume / Lautstärke
+      selector:
+        number:
+          min: 1
+          max: 100
+update_alarm:
+  name: Update alarm / Wecker ändern
+  description: Requires alarm_id and time (HH:MM). Optional label, repeat, volume, device_id. Use list_alarms to find the ID.
+  fields:
+    alarm_id:
+      required: true
+      selector:
+        text:
+    time:
+      required: true
+      selector:
+        text:
+    label:
+      selector:
+        text:
+    repeat:
+      selector:
+        select:
+          multiple: true
+          options: [mon, tue, wed, thu, fri, sat, sun]
+    volume:
+      selector:
+        number:
+          min: 1
+          max: 100
+    device_id:
+      selector:
+        device:
+          integration: ha_alarmclock
+list_alarms:
+  name: List alarms / Wecker auflisten
+  description: Returns the last device snapshot and pending synchronization status.
+  fields:
+    device_id:
+      selector:
+        device:
+          integration: ha_alarmclock
+delete_alarm:
+  name: Delete alarm / Wecker löschen
+  fields:
+    alarm_id:
+      required: true
+      selector:
+        text:
+    device_id:
+      selector:
+        device:
+          integration: ha_alarmclock
+dismiss:
+  name: Dismiss alarm / Klingelnden Wecker ausschalten
+  fields:
+    device_id:
+      selector:
+        device:
+          integration: ha_alarmclock
+snooze:
+  name: Snooze alarm / Fünf Minuten schlummern
+  fields:
+    device_id:
+      selector:
+        device:
+          integration: ha_alarmclock

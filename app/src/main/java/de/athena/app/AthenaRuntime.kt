@@ -31,13 +31,14 @@ class AthenaRuntime(val context: Context) {
     var webStatus by mutableStateOf(""); private set
     val pairing = PairingGate()
     var pairingCode by mutableStateOf(""); private set
-    var timeZone by mutableStateOf(java.util.TimeZone.getDefault().id); private set
+    var timeZone by mutableStateOf(store.lastZone); private set
     val cameraImage = mutableStateMapOf<String, Bitmap>()
     private var bridgeJob: Job? = null
     private var ringJob: Job? = null
     private var previousPage = "home"
     private var previousCamera = ""
     private val chime=ChimePlayer(context)
+    val alarms=AlarmEngine(context)
     var lux by mutableStateOf<Float?>(null);private set
     var nightActive by mutableStateOf(false);private set
     var nightPeekUntil by mutableLongStateOf(0L);private set
@@ -51,9 +52,12 @@ class AthenaRuntime(val context: Context) {
         { text, ok -> scope.launch { haStatus = text; connected = ok } },
         { old, new -> scope.launch { if (isDoorbellChange(config, old, new)) showDoorbell() } },
         { areas, mapping -> scope.launch { areaNames = areas; entityAreas = mapping } },
-        { zone -> scope.launch { timeZone = zone } })
+        { zone -> scope.launch { timeZone = zone;store.lastZone=zone } }, {scope.launch {alarmSync.wake()}})
+    val alarmSync=AlarmSync(this)
     private val web = WebServer(this)
     fun start() {
+        alarms.restoreSchedules();alarms.resumeRinging()
+        alarmSync.start()
         ambient.start()
         scope.launch {while(isActive) {
             nightClock=android.os.SystemClock.elapsedRealtime()
@@ -84,8 +88,21 @@ class AthenaRuntime(val context: Context) {
     }
     fun newPairing() { pairingCode = pairing.open() }
     fun consumePin(pin: String): Boolean = pairing.consume(pin).also {pairingCode = pairing.visible()}
-    fun close() { bridgeJob?.cancel(); ambient.close(); chime.close(); web.stop(); ha.disconnect(); scope.cancel() }
+    fun close() { bridgeJob?.cancel(); ambient.close(); alarms.close(); chime.close(); web.stop(); ha.disconnect(); scope.cancel() }
     fun testChime(kind: String=config.ringtone, volume: Int=config.ringVolume) {chime.play(kind,volume)}
+    fun alarmCommand(data: JSONObject): JSONObject {
+        val result=JSONObject().put("ok",true)
+        when(data.getString("action")) {
+            "create" -> result.put("alarm",alarms.create(data.getInt("hour"),data.getInt("minute"),data.optString("label"),data.optBoolean("daily"),timeZone,data.optInt("volume",75)).json())
+            "toggle" -> alarms.toggle(data.getString("id"),data.getBoolean("enabled"))
+            "remove" -> alarms.remove(data.getString("id"))
+            "dismiss" -> alarms.dismiss()
+            "snooze" -> alarms.snooze()
+            "list" -> Unit
+            else -> error("Unbekannter Weckerbefehl")
+        }
+        return result.put("alarms",alarms.json())
+    }
     suspend fun save(json: JSONObject) {
         val next = AppConfig.from(json)
         val token = if (json.optBoolean("clearToken")) "" else json.optString("haToken").trim().ifEmpty { store.token }
@@ -134,6 +151,7 @@ class AthenaRuntime(val context: Context) {
     }
     fun statusJson(): JSONObject = JSONObject().put("version", BuildConfig.VERSION_NAME).put("haStatus", haStatus).put("connected", connected)
         .put("voice", voice.phase.name).put("address", address()).put("bridgeAvailable", voice.phase != VoicePhase.OFFLINE)
+        .put("alarmSyncStatus",alarmSync.status).put("alarmLastSync",alarmSync.lastSuccess)
         .put("nightActive",nightActive).put("lux",lux ?: JSONObject.NULL).put("lightSensorAvailable",lightSensorAvailable)
     fun configJson(): JSONObject = config.json().put("hasToken", store.token.isNotBlank())
     fun entitiesJson() = JSONArray().apply { entities.forEach { e -> put(e.json().put("area", entityAreas[e.id] ?: "")) } }
@@ -162,6 +180,12 @@ class AthenaService: Service() {
         AthenaRuntime.get(this)
     }
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if(intent?.action=="de.athena.ALARM") {
+            val runtime=AthenaRuntime.get(this)
+            intent.getStringExtra("alarmId")?.let {runtime.alarms.fire(it)}
+            if(runtime.alarms.active!=null) startActivity(Intent(this,MainActivity::class.java)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP))
+        }
         if(intent?.getBooleanExtra("boot",false)==true) {
             val runtime=AthenaRuntime.get(this)
             runtime.scope.launch {
@@ -178,6 +202,7 @@ class AthenaService: Service() {
 }
 class BootReceiver: BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
+        if(intent.action==Intent.ACTION_BOOT_COMPLETED) AlarmEngine(context).restoreSchedules()
         if (intent.action == Intent.ACTION_BOOT_COMPLETED && ConfigStore(context).config.autoStart) {
             context.startForegroundService(Intent(context, AthenaService::class.java).putExtra("boot",true))
         }

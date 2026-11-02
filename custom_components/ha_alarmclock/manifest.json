@@ -1,0 +1,17 @@
+{
+  "domain": "ha_alarmclock",
+  "name": "HA Alarm Clock \u00b7 Athena",
+  "codeowners": [
+    "@gerrit117"
+  ],
+  "config_flow": true,
+  "dependencies": [
+    "http",
+    "llm"
+  ],
+  "documentation": "https://github.com/gerrit117/Athena",
+  "iot_class": "local_push",
+  "issue_tracker": "https://github.com/gerrit117/Athena/issues",
+  "requirements": [],
+  "version": "0.4.0"
+}

@@ -1,0 +1,17 @@
+language: en
+intents:
+  HaAlarmClockCreateAlarm:
+    data:
+      - sentences:
+          - "set an alarm (for|at) {athena_hour:hour}"
+          - "set an alarm (for|at) {athena_hour:hour} {athena_minute:minute}"
+          - "wake me up at {athena_hour:hour}"
+lists:
+  athena_hour:
+    range:
+      from: 0
+      to: 23
+  athena_minute:
+    range:
+      from: 0
+      to: 59

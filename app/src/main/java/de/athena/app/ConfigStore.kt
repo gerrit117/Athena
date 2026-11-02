@@ -14,6 +14,12 @@ import javax.crypto.spec.GCMParameterSpec
 
 class ConfigStore(context: Context) {
     private val prefs = context.getSharedPreferences("athena", Context.MODE_PRIVATE)
+    val deviceId: String = prefs.getString("alarmDeviceId",null) ?: java.util.UUID.randomUUID().toString().also {
+        check(prefs.edit().putString("alarmDeviceId",it).commit())
+    }
+    var lastZone: String
+        get()=prefs.getString("lastZone",java.util.TimeZone.getDefault().id)!!
+        set(value) {check(prefs.edit().putString("lastZone",value).commit())}
     private fun key(): SecretKey {
         val store = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
         (store.getKey("athena.credentials", null) as? SecretKey)?.let { return it }

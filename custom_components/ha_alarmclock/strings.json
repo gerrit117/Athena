@@ -1,0 +1,35 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Set up HA Alarm Clock",
+        "description": "Connect Athena alarms to Home Assistant. Athena uses its existing HA connection. Alarms are stored and executed on the Echo."
+      }
+    },
+    "abort": {
+      "already_configured": "HA Alarm Clock is already set up."
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "ringing": {
+        "name": "Ringing"
+      }
+    },
+    "sensor": {
+      "next_alarm": {
+        "name": "Next alarm"
+      },
+      "alarm_sync": {
+        "name": "Alarm synchronization",
+        "state": {
+          "pending": "Awaiting Echo confirmation",
+          "synced": "Synchronized",
+          "offline": "Device offline",
+          "failed": "Failed",
+          "expired": "Expired"
+        }
+      }
+    }
+  }
+}

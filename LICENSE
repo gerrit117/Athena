@@ -1,3 +1,5 @@
+Licensing scope: This MIT license covers the Athena application and independent protocol client. The derived Home Assistant integration in custom_components/ha_alarmclock is licensed separately under GPL-3.0; see that directory's LICENSE and NOTICE.md. The audio bridge has its own notices in bridge/NOTICE.md.
+
 MIT License
 
 Copyright (c) 2026 Athena contributors

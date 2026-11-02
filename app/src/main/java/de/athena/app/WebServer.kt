@@ -58,7 +58,11 @@ class WebServer(private val runtime: AthenaRuntime): NanoHTTPD(26804) {
                 }
                 session.uri == "/api/state" && session.method == Method.GET -> main {
                     reply(200, JSONObject().put("status", runtime.statusJson()).put("config", runtime.configJson())
-                        .put("entities", runtime.entitiesJson()).put("areas", JSONObject(runtime.areaNames)))
+                        .put("entities", runtime.entitiesJson()).put("areas", JSONObject(runtime.areaNames)).put("alarms",runtime.alarms.json()))
+                }
+                session.uri=="/api/alarms" && session.method==Method.POST -> {
+                    val data=body(session)
+                    main {reply(200,runtime.alarmCommand(data))}
                 }
                 session.uri == "/api/config" && session.method == Method.POST -> {
                     val data = body(session)

@@ -61,19 +61,25 @@ class MainActivity: ComponentActivity() {
 
 @Composable fun AthenaApp(r: AthenaRuntime, keyboardInset: Int = 0) {
     val busy = r.voice.phase in setOf(VoicePhase.LISTENING, VoicePhase.THINKING, VoicePhase.SPEAKING)
+    val ringing=r.alarms.active!=null
     val displayed = if (busy && r.page != "camera") "voice" else r.page
     val keyboard=LocalSoftwareKeyboardController.current
     val focus=LocalFocusManager.current
     val inset=with(LocalDensity.current) {keyboardInset.toDp()}
-    val night=r.nightActive && r.nightClock>=r.nightPeekUntil && !busy && !r.ringActive && r.page!="settings" && keyboardInset==0
+    val night=r.nightActive && r.nightClock>=r.nightPeekUntil && !busy && !ringing && !r.ringActive && r.page!="settings" && keyboardInset==0
     val activity=LocalActivity.current
+    DisposableEffect(activity,ringing) {
+        if(ringing) {activity?.setTurnScreenOn(true);activity?.setShowWhenLocked(true)}
+        onDispose {if(ringing) {activity?.setTurnScreenOn(false);activity?.setShowWhenLocked(false)}}
+    }
     DisposableEffect(activity,night,r.config.nightBrightness) {
         val window=activity?.window
         val previous=window?.attributes?.screenBrightness ?: -1f
         window?.let {w -> w.attributes=w.attributes.apply {screenBrightness=if(night)r.config.nightBrightness/100f else -1f}}
         onDispose {window?.let {w -> w.attributes=w.attributes.apply {screenBrightness=previous}}}
     }
-    LaunchedEffect(busy) {if(busy) {focus.clearFocus();keyboard?.hide()}}
+    LaunchedEffect(busy,ringing) {if(busy || ringing) {focus.clearFocus();keyboard?.hide()}}
+    if(ringing) {AlarmRingingScreen(r);return}
     if(night) {NightScreen(r);return}
     Surface(color = MaterialTheme.colorScheme.background, modifier = Modifier.fillMaxSize().padding(bottom=inset)) {
         Column(Modifier.fillMaxSize().padding(horizontal = 24.dp, vertical = 12.dp)) {
@@ -86,6 +92,7 @@ class MainActivity: ComponentActivity() {
                 Spacer(Modifier.width(7.dp))
                 Text(r.t(r.haStatus), style = MaterialTheme.typography.labelMedium, maxLines = 1, modifier = Modifier.widthIn(max = 240.dp))
                 Spacer(Modifier.width(10.dp))
+                IconButton(onClick={r.page="alarms"}) {Icon(Icons.Outlined.Alarm,r.t("Wecker"))}
                 if(r.page=="settings" || keyboardInset>0) IconButton(onClick={focus.clearFocus();keyboard?.hide()}) {Icon(Icons.Outlined.KeyboardHide,r.t("Tastatur schließen"))}
                 IconButton(onClick = { r.page = "settings" }) { Icon(Icons.Outlined.Settings, r.t("Einstellungen")) }
             }
@@ -95,6 +102,7 @@ class MainActivity: ComponentActivity() {
                     "settings" -> SettingsScreen(r)
                     "voice" -> VoiceScreen(r)
                     "devices" -> DevicesScreen(r)
+                    "alarms" -> AlarmsScreen(r)
                     "cameras" -> CamerasScreen(r)
                     "camera" -> CameraScreen(r)
                     else -> HomeScreen(r)

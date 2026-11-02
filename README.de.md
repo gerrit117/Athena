@@ -14,6 +14,8 @@ Aktuell geprüft: **Echo Show 8, 2. Generation (2021), A8H3N2 / athena, Firmware
 
 ## Funktionen
 
+- Lokale Wecker mit einmaliger oder wochentäglicher Wiederholung, Schlummern und Nachtmodus-Unterbrechung. Optionale HA-Synchronisierung mit gespeicherter Warteschlange und Gerätebestätigung; Sprachsteuerung über Assist. [Wecker einrichten](docs/alarms.de.md).
+
 - Nachtansicht mit schwarzem Hintergrund und Uhr, automatischem Lichtsensor-Modus, einstellbarer Helligkeit, Lichtschwelle und Verzögerung. Datum/Statussymbole sind optional. Tippen öffnet vorübergehend die normale Ansicht; Sprache und Klingeln können sie überlagern.
 - Uhr, Datum, HA-Wetter und Favoriten. Optionale Gruppierung nach Raum und Kategorie.
 - Friendly Names als Hauptanzeige, Entitäts-IDs darunter. Suche nach Name, ID, Gerät und Raum; zusätzliche Kategorie-/Raumfilter und seitenweises Nachladen im Browser.
@@ -25,7 +27,7 @@ Aktuell geprüft: **Echo Show 8, 2. Generation (2021), A8H3N2 / athena, Firmware
 
 ## Installation
 
-[Download v0.2.0-alpha.1](https://github.com/gerrit117/Athena/releases/tag/v0.2.0-alpha.1)
+[Download v0.4.0-alpha.1](https://github.com/gerrit117/Athena/releases/tag/v0.4.0-alpha.1)
 
 Root und der geprüfte echo-dot-assist-Unterbau sind vorhanden:
 
@@ -46,7 +48,7 @@ Noch originales Fire OS? Mit der [Root-Anleitung](docs/root.de.md) beginnen. Dor
 - Sprachstatus derzeit ohne Mikrofonpegel und Transkript. Theme-Paketinstallation ist noch nicht implementiert.
 - Die Status-Erweiterung ist an den geprüften Audiobuild gebunden. Fremde Builds/Overrides werden nicht überschrieben.
 - Bisherige Test-APKs nutzen einen lokalen Debug-Schlüssel. Ein späterer Signaturwechsel benötigt eine Umstellungsanleitung.
-- Wecker-Sprachbefehle und optionale Medienempfänger sind in Arbeit, keine fertigen Veröffentlichungsfunktionen.
+- Die optionale Weckerintegration benötigt HA 2026.11 und einen passenden Gesprächsagenten. AirPlay-2- und Google-Cast-Empfang sowie die eingebaute Echo-Kamera sind noch nicht enthalten.
 
 ## Verwendete Projekte
 
@@ -58,6 +60,7 @@ Noch originales Fire OS? Mit der [Root-Anleitung](docs/root.de.md) beginnen. Dor
 | [baileyboy0304/VACAV](https://github.com/baileyboy0304/VACAV) | Grundlagen der Echo-Anzeige und Audioanbindung. |
 | [MSP1974/ViewAssistCompanionApp](https://github.com/MSP1974/ViewAssistCompanionApp) | Android-Display-App. |
 | [dinki/View-Assist](https://github.com/dinki/View-Assist), [View-Assist-Integration](https://github.com/dinki/view_assist_integration) | Anzeigekonzepte und Home-Assistant-Integration. |
+| [TargetCrafter/HA-Alarmclock](https://github.com/TargetCrafter/HA-Alarmclock) | Grundlage der mitgelieferten HA-Weckerintegration; um gespeicherte Befehle, Bestätigungen und Assist-Werkzeuge erweitert. GPL-3.0. |
 | [Home Assistant](https://github.com/home-assistant/core) | Entitäts-APIs, ESPHome und Assist-Pipeline. |
 
 Patch und MIT-Lizenzhinweis des Audiounterbaus liegen unter [bridge/](bridge/). Das ursprüngliche Systemprogramm bleibt erhalten. Die Projekte sind eigenständig; ihre Erwähnung bedeutet nicht, dass deren Autoren Athena betreuen.
@@ -76,3 +79,7 @@ python3 -m unittest discover -s tests -v
 ```
 
 `ANDROID_HOME` oder lokale, nicht versionierte `local.properties` setzen. APK: `app/build/outputs/apk/debug/app-debug.apk`. Target API 28 ist für Fire OS 7 beabsichtigt; kein Play-Store-Build. Android-App: Kotlin/Compose/Media3. WebUI: lokale TypeScript-/HTML-/CSS-Dateien. Siehe [Architektur](docs/architecture.md).
+
+## Lizenzen
+
+Athena-App und eigenständiger Protokollclient: MIT. Die abgeleitete HA-Weckerintegration: [GPL-3.0](custom_components/ha_alarmclock/LICENSE), mit [Herkunftshinweis](custom_components/ha_alarmclock/NOTICE.md). Audiounterbau: eigene Hinweise in [bridge/NOTICE.md](bridge/NOTICE.md).

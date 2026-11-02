@@ -1,0 +1,17 @@
+language: de
+intents:
+  HaAlarmClockCreateAlarm:
+    data:
+      - sentences:
+          - "(stell[e]|setz[e]) [einen|den] Wecker (auf|für) {athena_hour:hour} [Uhr]"
+          - "(stell[e]|setz[e]) [einen|den] Wecker (auf|für) {athena_hour:hour} [Uhr] {athena_minute:minute}"
+          - "weck[e] mich um {athena_hour:hour} [Uhr]"
+lists:
+  athena_hour:
+    range:
+      from: 0
+      to: 23
+  athena_minute:
+    range:
+      from: 0
+      to: 59

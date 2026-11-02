@@ -3,6 +3,8 @@ package de.athena.app
 import kotlinx.coroutines.*
 import okhttp3.*
 import okhttp3.HttpUrl.Companion.toHttpUrl
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.concurrent.ConcurrentHashMap
@@ -13,7 +15,7 @@ class HaClient(
     private val scope: CoroutineScope, private val changed: (List<Entity>) -> Unit,
     private val status: (String, Boolean) -> Unit, private val event: (Entity?, Entity?) -> Unit,
     private val areasChanged: (Map<String, String>, Map<String, String>) -> Unit,
-    private val timezoneChanged: (String) -> Unit
+    private val timezoneChanged: (String) -> Unit, private val alarmHint: () -> Unit
 ) {
     val http = OkHttpClient.Builder().connectTimeout(8, TimeUnit.SECONDS).readTimeout(12, TimeUnit.SECONDS).pingInterval(25, TimeUnit.SECONDS).build()
     @Volatile private var socket: WebSocket? = null
@@ -76,12 +78,15 @@ class HaClient(
                         }
                         emit(); status("Verbunden", true)
                         runCatching {request(JSONObject().put("type", "get_config")).getJSONObject("result").optString("time_zone").takeIf {it.isNotBlank()}?.let(timezoneChanged)}
+                        runCatching {request(JSONObject().put("type","subscribe_events").put("event_type","ha_alarmclock_command"))}
+                        alarmHint()
                         loadAreas()
                     } catch (_: Exception) { if (gen == generation) { ws.cancel(); lost(gen) } }
                 }
             }
             "result" -> pending.remove(j.optInt("id"))?.complete(j)
             "event" -> {
+                if(j.optJSONObject("event")?.optString("event_type")=="ha_alarmclock_command") {alarmHint();return}
                 val data = j.optJSONObject("event")?.optJSONObject("data") ?: return
                 val old = data.optJSONObject("old_state")?.let(Entity::from)
                 val new = data.optJSONObject("new_state")?.let(Entity::from)
@@ -142,6 +147,17 @@ class HaClient(
         }
         areasChanged(areaNames, entityAreas)
         emit()
+    }
+    suspend fun syncAlarms(payload: JSONObject): JSONObject = withContext(Dispatchers.IO) {
+        check(authenticated)
+        val req=Request.Builder().url("$base/api/ha_alarmclock/sync").header("Authorization","Bearer $token")
+            .post(payload.toString().toRequestBody("application/json".toMediaType())).build()
+        http.newCall(req).execute().use {response ->
+            if(response.code==404 || response.code==410)error("HA Alarm Clock · Athena ist in HA nicht eingerichtet")
+            if(response.code==403)error("Für die Weckersynchronisierung wird ein HA-Administratorkonto benötigt")
+            check(response.isSuccessful) {"Weckersynchronisierung fehlgeschlagen (${response.code})"}
+            JSONObject(response.body!!.string()).also {check(it.optInt("protocol")==2) {"HA Alarm Clock benötigt die Athena-Erweiterung"}}
+        }
     }
     fun snapshotRequest(id: String): Request {
         require(id.matches(Regex("camera\\.[a-z0-9_]+")))

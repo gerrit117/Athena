@@ -14,6 +14,8 @@ Tested hardware: **Echo Show 8, 2nd generation (2021), A8H3N2 / athena, firmware
 
 ## Features
 
+- Local alarms with one-off or weekday repeats, snooze and night-view interruption. Optional HA synchronization uses a durable queue and device acknowledgements; voice control through Assist. [Alarm setup](docs/alarms.en.md).
+
 - Sensor-based night view with a black clock screen, adjustable brightness, threshold and delay. Optional date/status icons; tap to reveal the main view temporarily. Voice and doorbell events can interrupt it.
 - Clock, date, HA weather and configurable favorites. Optional room and category groups.
 - Friendly names and secondary entity IDs. Search by name, ID, device and room, with category/room filters and paged web results.
@@ -25,7 +27,7 @@ Tested hardware: **Echo Show 8, 2nd generation (2021), A8H3N2 / athena, firmware
 
 ## Install
 
-[Download v0.2.0-alpha.1](https://github.com/gerrit117/Athena/releases/tag/v0.2.0-alpha.1)
+[Download v0.4.0-alpha.1](https://github.com/gerrit117/Athena/releases/tag/v0.4.0-alpha.1)
 
 Already rooted, with the reviewed echo-dot-assist audio build installed:
 
@@ -46,7 +48,7 @@ Starting with stock Fire OS? Follow the [root guide](docs/root.en.md) first. Har
 - Voice status has no microphone level or transcript. Theme package installation is not implemented.
 - The included status binary is pinned to the reviewed audio build. Unknown builds and custom overrides are not overwritten.
 - Existing test APKs use a local debug signing key. A future key change needs migration instructions.
-- Alarm voice commands and optional media receivers are work in progress, not working release features.
+- Optional alarm integration requires HA 2026.11 and a suitable conversation agent. AirPlay 2, Google Cast reception and the built-in Echo camera are not included yet.
 
 ## Credits
 
@@ -58,6 +60,7 @@ Starting with stock Fire OS? Follow the [root guide](docs/root.en.md) first. Har
 | [baileyboy0304/VACAV](https://github.com/baileyboy0304/VACAV) | Echo display and audio integration research. |
 | [MSP1974/ViewAssistCompanionApp](https://github.com/MSP1974/ViewAssistCompanionApp) | Android display companion. |
 | [dinki/View-Assist](https://github.com/dinki/View-Assist), [View Assist integration](https://github.com/dinki/view_assist_integration) | Display concepts and Home Assistant integration. |
+| [TargetCrafter/HA-Alarmclock](https://github.com/TargetCrafter/HA-Alarmclock) | Basis of the included HA alarm integration, extended with persistent commands, device acknowledgements and Assist tools. GPL-3.0. |
 | [Home Assistant](https://github.com/home-assistant/core) | Entity APIs, ESPHome integration and Assist pipeline. |
 
 The audio status patch and upstream MIT notice are in [bridge/](bridge/). The original system binary is retained. The projects above are independent; credit does not mean they maintain or endorse Athena.
@@ -76,3 +79,7 @@ python3 -m unittest discover -s tests -v
 ```
 
 Set `ANDROID_HOME` or an untracked `local.properties`. APK: `app/build/outputs/apk/debug/app-debug.apk`. Target API 28 is intentional for Fire OS 7; this is not a Play Store build. Android uses Kotlin/Compose/Media3; the WebUI uses local TypeScript/HTML/CSS assets. See [architecture](docs/architecture.md).
+
+## Licenses
+
+Athena app and independent protocol client: MIT. Derived HA alarm integration: [GPL-3.0](custom_components/ha_alarmclock/LICENSE), with [attribution](custom_components/ha_alarmclock/NOTICE.md). Audio component notices: [bridge/NOTICE.md](bridge/NOTICE.md).
